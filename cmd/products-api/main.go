@@ -3,10 +3,16 @@ package main
 import (
 	"log/slog"
 	"net/http"
+
+	"github.com/joho/godotenv"
+	"github.com/mubinkg/foodi-exam/internal/config"
 )
 
 func main() {
-	slog.Info("Hello")
+
+	godotenv.Load()
+
+	config.MustLoadEnv()
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
