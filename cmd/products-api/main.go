@@ -10,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/mubinkg/foodi-exam/internal/config"
+	"github.com/mubinkg/foodi-exam/internal/http/handlers/product"
 )
 
 func main() {
@@ -19,9 +20,7 @@ func main() {
 	cfg := config.MustLoadEnv()
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Wellcome to foodi crud"))
-	})
+	router.HandleFunc("POST /api/products", product.New())
 
 	server := http.Server{
 		Addr:    cfg.Address,
