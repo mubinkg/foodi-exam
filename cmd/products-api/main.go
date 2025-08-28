@@ -1,9 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/mubinkg/foodi-exam/internal/config"
@@ -24,9 +27,25 @@ func main() {
 		Addr:    cfg.Address,
 		Handler: router,
 	}
-	fmt.Printf("Server started on %s", cfg.Address)
-	err := server.ListenAndServe()
-	if err != nil {
-		slog.Warn("Server not started")
+
+	done := make(chan os.Signal, 1)
+
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	slog.Info("Server started on", slog.String("address", cfg.Address))
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			slog.Warn("Server not started")
+		}
+	}()
+	<-done
+
+	slog.Info("Shutting down server")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*1000)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("failed to shutdown the server")
 	}
+	slog.Info("server shut down successfully")
 }
