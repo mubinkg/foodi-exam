@@ -1,12 +1,15 @@
 package config
 
 import (
-	"fmt"
+	"flag"
+	"log"
 	"os"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type HttpServer struct {
-	Address string
+	Address string `yaml:"address" env:"address" env-required:"true"`
 }
 
 type Config struct {
@@ -15,8 +18,29 @@ type Config struct {
 	HttpServer  `yaml:"http_server"`
 }
 
-func MustLoadEnv() {
+func MustLoadEnv() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 
-	fmt.Println("Config path value : ", configPath)
+	if configPath == "" {
+		flags := flag.String("config", "", "path to config file")
+		flag.Parse()
+		configPath = *flags
+
+		if configPath == "" {
+			log.Fatal("Config path is not set")
+		}
+	}
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		log.Fatalf("Config file does not exist %s", configPath)
+	}
+
+	var cfg Config
+
+	err := cleanenv.ReadConfig(configPath, &cfg)
+
+	if err != nil {
+		log.Fatalf("Can not read config file %s", err.Error())
+	}
+
+	return &cfg
 }

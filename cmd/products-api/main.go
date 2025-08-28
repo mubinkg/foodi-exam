@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -12,7 +13,7 @@ func main() {
 
 	godotenv.Load()
 
-	config.MustLoadEnv()
+	cfg := config.MustLoadEnv()
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -20,10 +21,10 @@ func main() {
 	})
 
 	server := http.Server{
-		Addr:    "localhost:8082",
+		Addr:    cfg.Address,
 		Handler: router,
 	}
-
+	fmt.Printf("Server started on %s", cfg.Address)
 	err := server.ListenAndServe()
 	if err != nil {
 		slog.Warn("Server not started")
