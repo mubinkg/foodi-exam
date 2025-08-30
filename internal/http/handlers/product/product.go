@@ -9,11 +9,12 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mubinkg/foodi-exam/internal/storage"
 	"github.com/mubinkg/foodi-exam/internal/types"
 	"github.com/mubinkg/foodi-exam/internal/utils/response"
 )
 
-func New() http.HandlerFunc {
+func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Creating products")
 
@@ -36,6 +37,12 @@ func New() http.HandlerFunc {
 			return
 		}
 
-		response.WriteJson(w, http.StatusCreated, map[string]string{"success": "ok"})
+		id, err := storage.CreateProduct(product.Title, product.Body, product.Price)
+		if err != nil {
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusCreated, map[string]string{"success": "ok", "id": fmt.Sprintf("%d", id)})
 	}
 }

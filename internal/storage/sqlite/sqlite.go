@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/mubinkg/foodi-exam/internal/config"
+	_ "modernc.org/sqlite"
 )
 
 type SQlite struct {
@@ -11,8 +12,29 @@ type SQlite struct {
 }
 
 func New(cfg *config.Config) (*SQlite, error) {
-	db, err := sql.Open("sqlite3", cfg.StoragePath)
+	db, err := sql.Open("sqlite", cfg.StoragePath)
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, title TEXT, body TEXT, price REAL)`)
+	
+	if err != nil {
+		return nil, err
+	}
+	return &SQlite{Db: db}, nil
+}
+
+func (s *SQlite) CreateProduct(title string, body string, price float64) (int64, error){
+	stmt, err := s.Db.Prepare(`INSERT INTO products (title, body, price) VALUES (?, ?, ?)`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(title, body, price)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }

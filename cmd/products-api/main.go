@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/mubinkg/foodi-exam/internal/config"
 	"github.com/mubinkg/foodi-exam/internal/http/handlers/product"
+	"github.com/mubinkg/foodi-exam/internal/storage/sqlite"
 )
 
 func main() {
@@ -18,9 +20,15 @@ func main() {
 	godotenv.Load()
 
 	cfg := config.MustLoadEnv()
+	storage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatal("failed to connect to database", err)
+	}
+	defer storage.Db.Close()
+
 	router := http.NewServeMux()
 
-	router.HandleFunc("POST /api/products", product.New())
+	router.HandleFunc("POST /api/products", product.New(storage))
 
 	server := http.Server{
 		Addr:    cfg.Address,
