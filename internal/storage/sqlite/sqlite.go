@@ -2,8 +2,10 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/mubinkg/foodi-exam/internal/config"
+	"github.com/mubinkg/foodi-exam/internal/types"
 	_ "modernc.org/sqlite"
 )
 
@@ -37,4 +39,22 @@ func (s *SQlite) CreateProduct(title string, body string, price float64) (int64,
 	}
 
 	return res.LastInsertId()
+}
+
+func (s *SQlite) GetProductById(id int64) (types.Product, error) {
+	stmnt, err := s.Db.Prepare(`SELECT id, title, body, price FROM products WHERE id = ?`)
+	if err != nil {
+		return types.Product{}, err
+	}
+	defer stmnt.Close()
+
+	var product types.Product
+	err = stmnt.QueryRow(id).Scan(&product.Id, &product.Title, &product.Body, &product.Price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return types.Product{}, fmt.Errorf("product not found with id %d", id)
+		}
+		return types.Product{}, err
+	}
+	return product, nil
 }

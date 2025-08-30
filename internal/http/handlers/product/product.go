@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mubinkg/foodi-exam/internal/storage"
@@ -22,16 +23,19 @@ func New(storage storage.Storage) http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&product)
 
 		if errors.Is(err, io.EOF) {
+			slog.Error("empty body")
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("empty body")))
 			return
 		}
 
 		if err != nil {
+			slog.Error("failed to decode request body", "error", err)
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
 
 		if err := validator.New().Struct(product); err != nil {
+			slog.Error("validation failed", "error", err)
 			validateErr := err.(validator.ValidationErrors)
 			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErr))
 			return
@@ -39,10 +43,40 @@ func New(storage storage.Storage) http.HandlerFunc {
 
 		id, err := storage.CreateProduct(product.Title, product.Body, product.Price)
 		if err != nil {
+			slog.Error("failed to create product", "error", err)
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 			return
 		}
 
 		response.WriteJson(w, http.StatusCreated, map[string]string{"success": "ok", "id": fmt.Sprintf("%d", id)})
+	}
+}
+
+func GetById(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Getting product by ID")
+
+		id := r.PathValue("id")
+		if id == "" {
+			slog.Error("missing id")
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("missing id")))
+			return
+		}
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			slog.Error("invalid id", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		product, err := storage.GetProductById(intId)
+		if err != nil {
+			slog.Error("failed to get product", "error", err)
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, product)
 	}
 }
