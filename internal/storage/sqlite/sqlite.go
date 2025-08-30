@@ -76,3 +76,14 @@ func (s *SQlite) GetAllProducts() ([]types.Product, error) {
 	}
 	return products, nil
 }
+
+func (s *SQlite) UpdateProduct(id int64, title string, body string, price float64) error {
+	stmt, err := s.Db.Prepare(`UPDATE products SET title = ?, body = ?, price = ? WHERE id = ?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(title, body, price, id)
+	return err
+}
