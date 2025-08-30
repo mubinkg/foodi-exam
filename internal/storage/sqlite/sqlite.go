@@ -87,3 +87,33 @@ func (s *SQlite) UpdateProduct(id int64, title string, body string, price float6
 	_, err = stmt.Exec(title, body, price, id)
 	return err
 }
+
+func (s *SQlite) SearchProducts(query string, sort string) ([]types.Product, error) {
+	orderBy := "id ASC"
+	if sort == "desc" {
+		orderBy = "id DESC"
+	}
+	sqlQuery := fmt.Sprintf(
+		`SELECT id, title, body, price 
+		 FROM products 
+		 WHERE title LIKE ? OR body LIKE ? 
+		 ORDER BY %s`, orderBy,
+	)
+
+	rows, err := s.Db.Query(sqlQuery, "%"+query+"%", "%"+query+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []types.Product
+	for rows.Next() {
+		var product types.Product
+		if err := rows.Scan(&product.Id, &product.Title, &product.Body, &product.Price); err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
+

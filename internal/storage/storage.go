@@ -7,4 +7,5 @@ type Storage interface {
 	GetProductById(id int64) (types.Product, error)
 	GetAllProducts() ([]types.Product, error)
 	UpdateProduct(id int64, title string, body string, price float64) error
+	SearchProducts(query string, sort string) ([]types.Product, error)
 }

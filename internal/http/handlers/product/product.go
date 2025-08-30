@@ -141,3 +141,27 @@ func Update(storage storage.Storage) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, map[string]string{"success": "ok"})
 	}
 }
+
+func Search(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Searching products")
+
+		query := r.URL.Query().Get("q")
+		sort := r.URL.Query().Get("sort")
+
+		if query == "" {
+			slog.Error("missing query")
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("missing query")))
+			return
+		}
+
+		products, err := storage.SearchProducts(query, sort)
+		if err != nil {
+			slog.Error("failed to search products", "error", err)
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, products)
+	}
+}
