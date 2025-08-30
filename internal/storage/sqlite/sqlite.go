@@ -58,3 +58,21 @@ func (s *SQlite) GetProductById(id int64) (types.Product, error) {
 	}
 	return product, nil
 }
+
+func (s *SQlite) GetAllProducts() ([]types.Product, error) {
+	rows, err := s.Db.Query(`SELECT id, title, body, price FROM products`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []types.Product
+	for rows.Next() {
+		var product types.Product
+		if err := rows.Scan(&product.Id, &product.Title, &product.Body, &product.Price); err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}

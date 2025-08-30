@@ -80,3 +80,19 @@ func GetById(storage storage.Storage) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, product)
 	}
 }
+
+
+func GetAll(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Getting all products")
+
+		products, err := storage.GetAllProducts()
+		if err != nil {
+			slog.Error("failed to get products", "error", err)
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, products)
+	}
+}

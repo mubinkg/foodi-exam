@@ -5,4 +5,5 @@ import "github.com/mubinkg/foodi-exam/internal/types"
 type Storage interface {
 	CreateProduct(title string, body string, price float64) (int64, error)
 	GetProductById(id int64) (types.Product, error)
+	GetAllProducts() ([]types.Product, error)
 }
